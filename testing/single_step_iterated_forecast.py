@@ -6,9 +6,11 @@ import tensorflow as tf
 import os
 import pickle
 import json
+import tqdm
+from tqdm import tqdm
 from tensorflow.keras.models import model_from_json
-from lstnet_util import GetArguments, LSTNetInit
-from lstnet_model import PreSkipTrans, PostSkipTrans, PreARTrans, PostARTrans, LSTNetModel, ModelCompile
+from LSTNet.lstnet_util import GetArguments, LSTNetInit
+from LSTNet.lstnet_model import PreSkipTrans, PostSkipTrans, PreARTrans, PostARTrans, LSTNetModel, ModelCompile
 
 import yfinance as yf
 import pandas as pd
@@ -51,9 +53,9 @@ def lstnet_forecast(model, forecast_steps, series, time_steps):
     
     return forecast
 
-def plot_lstnet_forecast(model, data='data/large_portfolio.csv', forecast_steps=50, series_index=24):
+def plot_lstnet_forecast(model, data='LSTNet/data/large_portfolio.csv', forecast_steps=15, series_index=24):
     series=np.array(pd.read_csv(data))[:,1:]
-    forecast=lstnet_forecast(model=model, series=series, forecast_steps=50, time_steps=28)
+    forecast=lstnet_forecast(model=model, series=series, forecast_steps=15, time_steps=28)
     forecast_df=pd.DataFrame(forecast.reshape(forecast_steps,series.shape[1]))
     forecast_df.columns=tickers 
 
@@ -63,6 +65,16 @@ def plot_lstnet_forecast(model, data='data/large_portfolio.csv', forecast_steps=
     cumulative_df=pd.DataFrame(np.array(cumulative_df))
     cumulative_df.iloc[-(100+len(forecast_df)):-len(forecast_df),series_index].plot(color='blue')
     cumulative_df.iloc[-len(forecast_df):,series_index].plot(color='red')
+    output_df=cumulative_df.iloc[-55:,:]
+   
+
+    json_data = output_df.to_json(orient='index')
+
+    with open('LargePortfolioLSTNet_forecast.json', 'w') as f:
+        f.write(json_data)
+    print('JSON data saved to', 'LargePortfolioLSTNet_forecast.json')
+
+
     plt.legend()
     title_ticker=tickers[series_index]
     plt.title(title_ticker)
